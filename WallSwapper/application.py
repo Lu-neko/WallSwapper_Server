@@ -1,9 +1,11 @@
 from flask import Flask, request, send_file, make_response, Blueprint
 import os
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from .database.interactions import get_user, url_set_image, create_link
+from .database.interactions import get_user, url_set_image, create_link, create_user, connect_user, friend_set_image, delete_link
+
+file_folder = __name__.split(".")[0] + "/files/"
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1000 * 1000
@@ -50,20 +52,23 @@ def update():
     if not user:
         return "", 400
 
+    if not user.image:
+        return "", 204
+
     return user.image, 200
 
 @api.route("/images/<filename>")
 def image(filename):
-    if filename in os.listdir("files"):
-        return send_file(f"files/{filename}")
+    if filename in os.listdir(file_folder):
+        return send_file(f"files/{filename}", mimetype='image')
     return "", 404
 
 @api.route("/link/set_image", methods=["POST"])
 def link_set_image():
-    if not "url" in request.json:
+    if not "url" in request.form:
         return "", 400
 
-    url = request.json["url"]
+    url = request.form["url"]
 
     if "image" not in request.files:
         return "", 400
@@ -90,11 +95,11 @@ def link_set_image():
     if not url_set_image(url, md5.hexdigest()):
         return "", 400
 
-    file.save("files/" + md5.hexdigest())
+    file.save(file_folder + md5.hexdigest())
 
     return "", 200
 
-@api.route("/friendship/set_image")
+@api.route("/friendship/set_image", methods=["POST"])
 def friendship_set_image():
     token = request.json.get("token")
     target_id = request.json.get("target_id")
@@ -126,8 +131,12 @@ def friendship_set_image():
     if not friend_set_image(token, target_id, md5.hexdigest()):
         return "", 400
 
-@api.route("/create_link")
-def create_link():
+    file.save(file_folder + md5.hexdigest())
+
+    return "", 200
+
+@api.route("/create_link", methods=["POST"])
+def api_create_link():
     if not "token" in request.json:
         return "", 401
 
@@ -151,7 +160,7 @@ def create_link():
 
         expiration = datetime.fromtimestamp(int(expiration))
 
-        if expiration < datetime.now() or expiration > datetime.now() + datetime.timedelta(days=60):
+        if expiration < datetime.now() or expiration > datetime.now() + timedelta(days=60):
             return "", 400
 
     result = create_link(token, uses, expiration)
@@ -164,8 +173,8 @@ def create_link():
 
     return result.url
 
-@api.route("/delete_link")
-def delete_link():
+@api.route("/delete_link", methods=["POST"])
+def api_delete_link():
     token = request.json.get("token")
     url = request.json.get("url")
 

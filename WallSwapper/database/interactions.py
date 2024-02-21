@@ -3,7 +3,8 @@ from . import Session
 
 from secrets import token_urlsafe
 from argon2 import PasswordHasher
-from datetime import datetime
+from datetime import datetime, timedelta
+import secrets
 
 ph = PasswordHasher(time_cost=1)
 
@@ -24,7 +25,6 @@ def create_user(name, password):
         user = User(name=name, password=hash, token=token)
         session.add(user)
         session.commit()
-
         return user
 
 def connect_user(name, password):
@@ -47,7 +47,7 @@ def get_user(token):
 
     if not user:
         return None
-    
+
     return user
 
 def url_set_image(url, image):
@@ -71,7 +71,7 @@ def url_set_image(url, image):
         link.last_use = datetime.now()
         link.user.image = image
 
-        sesssion.commit()
+        session.commit()
 
         return True
 
@@ -113,12 +113,15 @@ def create_link(token, uses=None, expiration=None):
             url = secrets.token_urlsafe(12)
 
         if not expiration:
-            expiration = datetime.now() + datetime.timedelta(days=60)
+            expiration = datetime.now() + timedelta(days=60)
 
-        link = Link(url=url, uses=uses, expiration=expiration)
+        link = Link(url=url, uses=uses, expiration=expiration, user=user)
 
         session.add(link)
         session.commit()
+
+        session.expunge(link)
+        return link
 
 def delete_link(token, url):
     with Session() as session:

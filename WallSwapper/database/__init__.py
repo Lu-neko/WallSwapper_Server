@@ -6,4 +6,4 @@ from .tables import Base, User, Link, Friendship
 
 engine = create_engine(f"postgresql+psycopg2://postgres:{DB_PASS}@{DB_URL}:{DB_PORT}/{DB_NAME}")
 
-Session = sessionmaker(engine)
+Session = sessionmaker(engine, expire_on_commit=False)
