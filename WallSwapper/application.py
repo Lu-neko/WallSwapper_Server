@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file, make_response, Blueprint
+from flask import Flask, request, send_file, make_response, Blueprint, render_template
 import os
 import hashlib
 from datetime import datetime, timedelta
@@ -9,6 +9,10 @@ file_folder = __name__.split(".")[0] + "/files/"
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1000 * 1000
+
+@app.route("/set_image/<url>")
+def set_image(url):
+    return render_template("link_file.html")
 
 api = Blueprint("api", __name__, url_prefix="/api")
 
