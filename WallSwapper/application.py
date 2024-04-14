@@ -46,6 +46,38 @@ def connect():
 
     return result.token
 
+@api.route("/get_informations", methods=["GET"])
+def get_informations():
+    print(request.json)
+
+    if not "token" in request.json:
+        return "", 400
+    token = request.json["token"]
+    user = get_user(token)
+
+    if not user:
+        return "", 400
+
+    print({
+        "username": user.name,
+        "friends": [
+            {"username": friend.name, "state": 1, "picture":"", "waiting": False} for friend in user.friends
+        ],
+        "links": [
+            {"url": link.url, "usages":0, "max_uses": link.uses, "created": 0, "end": int(link.expiration.timestamp())} for link in user.links
+        ]
+    })
+
+    return {
+        "username": user.name,
+        "friends": [
+            {"username": friend.name, "state": 1, "picture":"", "waiting": False} for friend in user.friends
+        ],
+        "links": [
+            {"url": link.url, "usages":0, "max_uses": link.uses, "created": 0, "end": int(link.expiration.timestamp())} for link in user.links
+        ]
+    }
+
 @api.route("/update", methods=["POST"])
 def update():
     if not "token" in request.json:

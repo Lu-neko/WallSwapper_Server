@@ -6,6 +6,8 @@ from argon2 import PasswordHasher
 from datetime import datetime, timedelta
 import secrets
 
+from sqlalchemy.orm import joinedload
+
 ph = PasswordHasher(time_cost=1)
 
 def create_user(name, password):
@@ -43,7 +45,7 @@ def connect_user(name, password):
 
 def get_user(token):
     with Session() as session:
-        user = session.query(User).filter_by(token=token).first()
+        user = session.query(User).filter_by(token=token).options(joinedload(User.friends)).options(joinedload(User.links)).first()
 
     if not user:
         return None
